@@ -1,0 +1,435 @@
+{
+  "name": "Day 10",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        -16
+      ],
+      "id": "e9cf3fa9-8e85-413d-bee9-ad9efed3baae",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "packages",
+          "mode": "list",
+          "cachedResultName": "packages"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "tracking_number": "={{ $json.tracking_number }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "tracking_number",
+              "displayName": "tracking_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "current_status",
+              "displayName": "current_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        128,
+        -16
+      ],
+      "id": "b4c3fd1e-ae64-435f-8ad6-227b5544ae03",
+      "name": "Insert rows in packages table",
+      "credentials": {
+        "postgres": {
+          "id": "APkiRHXLxO8TQlJl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tracking_events",
+          "mode": "list",
+          "cachedResultName": "tracking_events"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "package_id": "={{ $json.id }}",
+            "event": "received"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "package_id",
+              "displayName": "package_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "event_time",
+              "displayName": "event_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        336,
+        -16
+      ],
+      "id": "4d231474-4f57-45f6-8cc1-932586f06515",
+      "name": "Insert rows in tracking_events",
+      "credentials": {
+        "postgres": {
+          "id": "APkiRHXLxO8TQlJl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "packages",
+          "mode": "list",
+          "cachedResultName": "packages"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Insert rows in packages table').item.json.id }}",
+            "current_status": "in_transit"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tracking_number",
+              "displayName": "tracking_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "current_status",
+              "displayName": "current_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        544,
+        -16
+      ],
+      "id": "203bb615-3f28-4e7d-b104-707dec049d6b",
+      "name": "Update rows in packages",
+      "credentials": {
+        "postgres": {
+          "id": "APkiRHXLxO8TQlJl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "51cf0cfa-b0fe-4566-ba9a-aa0e4024d98f",
+              "name": "tracking_number",
+              "value": "PK3001",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -80,
+        -16
+      ],
+      "id": "3e3d04ba-62f8-4ee9-8c4b-1ac626fa41ec",
+      "name": "new package just arrived"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tracking_events",
+          "mode": "list",
+          "cachedResultName": "tracking_events"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "package_id": "={{ $('Insert rows in packages table').item.json.id }}",
+            "event": "left_warehouse"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "package_id",
+              "displayName": "package_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "event",
+              "displayName": "event",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "event_time",
+              "displayName": "event_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        752,
+        -16
+      ],
+      "id": "ddc5a004-b61a-4f6a-9088-297c91f443cc",
+      "name": "Insert rows in tracking_events1",
+      "credentials": {
+        "postgres": {
+          "id": "APkiRHXLxO8TQlJl",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "new package just arrived",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert rows in packages table": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in tracking_events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert rows in tracking_events": {
+      "main": [
+        [
+          {
+            "node": "Update rows in packages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update rows in packages": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in tracking_events1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "new package just arrived": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in packages table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7573badf-da74-4f8b-b817-bcdc8caf524f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f46772cf6e4809818bc95e2cc7cf4946f959fd18d239fe6092d62fcb39916f98"
+  },
+  "nodeGroups": [],
+  "id": "DZXyPgsMTphmjk6A",
+  "tags": []
+}

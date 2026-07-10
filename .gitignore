@@ -1,0 +1,18 @@
+# Never commit real credentials
+.env
+*.env
+passwords.txt
+**/passwords*.txt
+credentials.json
+*.pem
+*.key
+
+# OS/editor clutter
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# n8n local data (if ever run from this repo folder)
+.n8n/
+n8n_data/

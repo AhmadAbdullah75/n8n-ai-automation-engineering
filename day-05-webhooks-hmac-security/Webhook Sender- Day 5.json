@@ -1,0 +1,137 @@
+{
+  "name": "Webhook Sender- Day 5",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "55bf6028-b5f3-40e4-931c-390a24793f9a",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c5e0ced2-c346-4dff-8e23-562a381c59b1",
+              "name": "rawBody",
+              "value": "={{ JSON.stringify({ event: \"form_submission\", name: \"Ali Khan\", email: \"ali@example.com\" }) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "85c2a46b-a16f-422c-b47c-a716032a9e51",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "action": "hmac",
+        "value": "={{ $json.rawBody }}"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "3ce18c49-c840-44be-a6e0-017a01ad099c",
+      "name": "Crypto",
+      "credentials": {
+        "crypto": {
+          "id": "ZlBs5kgkTY9mxqN6",
+          "name": "Webhook Shared Secret: Crypto"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ahmad-abd3027.app.n8n.cloud/webhook-test/secure-webhook",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-signature",
+              "value": "={{ $json.data }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.rawBody }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "ab961c2f-3011-4ea0-9198-37aac2a2422f",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Crypto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e9b80fa2-b234-4387-b387-8fa79cb83643",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7166564a940f421a3e3155dc4cc8de04943289cfb21df3dc9e1776fcc617e45b"
+  },
+  "nodeGroups": [],
+  "id": "JsVtm5EYebzOMVMv",
+  "tags": []
+}

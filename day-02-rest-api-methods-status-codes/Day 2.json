@@ -1,0 +1,137 @@
+{
+  "name": "Day 2",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        32
+      ],
+      "id": "bd9c1c0b-e2c1-45bb-99a6-9d8ae981cf69",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://jsonplaceholder.typicode.com/posts/1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        16,
+        -208
+      ],
+      "id": "a26c1844-ee8d-413c-9b17-c82c68f75e62",
+      "name": "GET — success (200)"
+    },
+    {
+      "parameters": {
+        "url": "https://jsonplaceholder.typicode.com/posts/99999",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        256,
+        -16
+      ],
+      "id": "dceac5a4-912e-4b93-a29c-d72d4a934846",
+      "name": "GET — not found (404)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://jsonplaceholder.typicode.com/posts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"title\": \"Test Post\", \"body\": \"Learning APIs\", \"userId\": 1 }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        64,
+        128
+      ],
+      "id": "489f2dce-c3bb-4699-a866-c781683dcfef",
+      "name": "POST — created (201)"
+    },
+    {
+      "parameters": {
+        "url": "https://httpbin.org/status/500",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        288,
+        320
+      ],
+      "id": "23f07df0-6d7c-49c2-bf80-5b1e4982b904",
+      "name": "Simulated server error (500)"
+    },
+    {
+      "parameters": {
+        "url": "https://httpbin.org/status/429",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -112,
+        416
+      ],
+      "id": "4c084797-ad93-42b5-bc71-85c03e2c0d95",
+      "name": "Simulated rate limit (429)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "GET — success (200)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "POST — created (201)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Simulated rate limit (429)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GET — not found (404)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Simulated server error (500)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6e6bd0e0-e802-415e-85f4-3085f7f56471",
+  "meta": {
+    "instanceId": "7166564a940f421a3e3155dc4cc8de04943289cfb21df3dc9e1776fcc617e45b"
+  },
+  "nodeGroups": [],
+  "id": "VeoCNDMBypYRtp7K",
+  "tags": []
+}

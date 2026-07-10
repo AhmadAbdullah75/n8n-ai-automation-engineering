@@ -1,0 +1,97 @@
+{
+  "name": "Day 3",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "dd96425c-1a06-4587-9cc8-8bdefba7ca73",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "London"
+            },
+            {
+              "name": "appid",
+              "value": "1a2e1e08710cff847a8b7ec37dff8035"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        320,
+        -112
+      ],
+      "id": "fc73b637-356c-47c0-9194-c6c2e84f7c90",
+      "name": "API Key (OpenWeatherMap)"
+    },
+    {
+      "parameters": {
+        "url": "https://api.spotify.com/v1/browse/new-releases",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "spotifyOAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        320,
+        112
+      ],
+      "id": "a8aa36ca-03fc-4009-b976-1608d5ab3e53",
+      "name": "OAuth2 (Spotify Client Credentials)",
+      "credentials": {
+        "spotifyOAuth2Api": {
+          "id": "sfDQiPxf4ZvoeNnn",
+          "name": "Spotify account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "API Key (OpenWeatherMap)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "OAuth2 (Spotify Client Credentials)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e7c15a34-0839-415a-86ec-ed07a2c77756",
+  "meta": {
+    "instanceId": "7166564a940f421a3e3155dc4cc8de04943289cfb21df3dc9e1776fcc617e45b"
+  },
+  "nodeGroups": [],
+  "id": "yXLchsy7E2209aKt",
+  "tags": []
+}

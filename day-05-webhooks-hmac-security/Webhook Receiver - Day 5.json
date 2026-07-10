@@ -1,0 +1,168 @@
+{
+  "name": "Webhook Receiver - Day 5",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "secure-webhook",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "21764c43-1475-4064-ae8e-0ecf7b18901f",
+      "name": "Webhook",
+      "webhookId": "4efeb01c-1f0c-49d9-bb88-0424d118f143"
+    },
+    {
+      "parameters": {
+        "action": "hmac",
+        "value": "={{$json.body}}"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e0f9630d-5fd7-43d6-970a-371ccde566b8",
+      "name": "Crypto",
+      "credentials": {
+        "crypto": {
+          "id": "ZlBs5kgkTY9mxqN6",
+          "name": "Webhook Shared Secret: Crypto"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"status\": \"verified\" }",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        640,
+        -112
+      ],
+      "id": "27a7dc3c-b822-4717-99d4-3bb5f918fd7c",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d03a83d7-4574-4244-8a1b-26811e0a0651",
+              "leftValue": "={{ $json.data }}",
+              "rightValue": "={{ $('Webhook').item.json.headers['x-signature'] }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "c3d61e88-4069-4492-b405-7df1dafb5860",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"status\": \"invalid signature\" }",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        640,
+        80
+      ],
+      "id": "1aba7d7b-8aa3-46c6-bdb1-7e654c7286bf",
+      "name": "Respond to Webhook1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Crypto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3ed39a36-5978-49cc-856e-7f1a1a1b0370",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7166564a940f421a3e3155dc4cc8de04943289cfb21df3dc9e1776fcc617e45b"
+  },
+  "nodeGroups": [],
+  "id": "N4mreZ97NCr7N1HZ",
+  "tags": []
+}

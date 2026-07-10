@@ -1,0 +1,429 @@
+{
+  "name": "Day 6",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5c221800-ce2f-4420-bb3a-8972ccca8d48",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sources = [\"contact_form\", \"chat_widget\", \"referral\"];\nconst leads = [];\nfor (let i = 1; i <= 12; i++) {\n  leads.push({\n    json: {\n      id: i,\n      name: `Lead ${i}`,\n      source: sources[i % 3],\n      priority: i % 4 === 0 ? \"high\" : \"low\"\n    }\n  });\n}\nreturn leads;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6250c368-178f-4844-8b6e-436077858ab9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "contact_form",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "43beb089-dadf-4f54-a113-5a0182f71bc9"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "30becf17-2fd3-4a28-b2e9-3bb09714197a",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "chat_widget",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a188bbe9-9acd-422c-9aba-6c9ce5a0114d",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "referral",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "6a6b5ec4-b298-4488-afb8-01ce60abad8b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "51bd2dfb-dda3-4794-ae2f-78a9beec98dc",
+              "leftValue": "={{ $json.priority }}",
+              "rightValue": "high",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        -128
+      ],
+      "id": "5ca3fb2c-363a-4fa4-8119-f5df7b4db80d",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        848,
+        -272
+      ],
+      "id": "15d5f328-7b38-4663-b82c-c8fe75f4ef8c",
+      "name": "Escalate to human immediately"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ca2cd3f1-dfa7-415f-8130-6a6d130e528b",
+              "name": "handledBy",
+              "value": "Sales team",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        864,
+        -80
+      ],
+      "id": "c5b1db2b-8651-4fe8-ae0b-d27145a157c9",
+      "name": "Tag: Sales - standard queue"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "47cd82a6-5a4c-44f2-a477-0ba2e390639e",
+              "name": "handledBy",
+              "value": "Partnerships team",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        304
+      ],
+      "id": "d7f6857d-76cc-4977-a065-867ff0ebdf78",
+      "name": "Tag: Partnerships team"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1004b55-ff7d-480a-8168-e6b2dae93771",
+              "name": "handledBy",
+              "value": "Support team",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        688,
+        96
+      ],
+      "id": "4acc4255-63a8-45fe-b949-59be45334c1d",
+      "name": "Tag: Support team"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1200,
+        48
+      ],
+      "id": "a537250e-50a5-49df-b31d-93bf59bd04fb",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "batchSize": "={{ 3 }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1408,
+        64
+      ],
+      "id": "92cd8cdc-68ce-4068-82b2-de92f7ae64d7",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Replace Me",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        272
+      ],
+      "id": "5dd2442e-bf2f-4f89-a8ee-ba805466867e",
+      "placeholder": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        -32
+      ],
+      "id": "b16d0291-989c-46bb-b0b8-84f6fed9fb00",
+      "name": "All 11 leads processed"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag: Support team",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag: Partnerships team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Escalate to human immediately",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag: Sales - standard queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag: Sales - standard queue": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag: Support team": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Tag: Partnerships team": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "All 11 leads processed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ade791f0-fa3b-4bc4-8dba-f71102f4b98d",
+  "meta": {
+    "instanceId": "7166564a940f421a3e3155dc4cc8de04943289cfb21df3dc9e1776fcc617e45b"
+  },
+  "nodeGroups": [],
+  "id": "WIIGxPrhd39EQOhC",
+  "tags": []
+}

@@ -1,0 +1,193 @@
+{
+  "name": "Day 8+9",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const cities = [\"London\", \"Paris\", \"Lahore\",\"NoCity\"];\nreturn cities.map(city => ({ json: { city } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1626fd40-f235-4bc0-a8a3-63f8864b50aa",
+      "name": "Generate City List:Code Node"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Get city name from the current input item\nconst city = $input.item.json.city;\n\n// Your OpenWeatherMap API key\nconst apiKey = \"1a2e1e08710cff847a8b7ec37dff8035\";\n\n// Function to retry API requests if they fail\nconst fetchWithRetry = async (options, maxRetries = 3) => {\n\n  // Initial wait time before retrying\n  let delay = 1000;\n\n  // Loop for retry attempts\n  for (let attempt = 1; attempt <= maxRetries; attempt++) {\n    try {\n\n      // Make the API request\n      return await this.helpers.httpRequest(options);\n\n    } catch (err) {\n\n      // If this is the last attempt, throw the error\n      if (attempt === maxRetries) throw err;\n\n      // Wait before trying again\n      await new Promise(resolve => setTimeout(resolve, delay));\n\n      // Double the delay time (1s → 2s → 4s)\n      delay *= 2;\n    }\n  }\n};\n\n// Call OpenWeatherMap Geocoding API to get latitude and longitude\nconst geoResults = await fetchWithRetry({\n  method: 'GET', // HTTP GET request\n  url: 'http://api.openweathermap.org/geo/1.0/direct', // Geocoding endpoint\n  qs: {\n    q: city,      // City name to search\n    limit: 1,     // Return only one result\n    appid: apiKey // API key\n  },\n  json: true // Parse response as JSON\n});\n\n// Check if no city was found\nif (!geoResults || geoResults.length === 0) {\n\n  // Stop workflow and show error\n  throw new Error(`City not found: ${city}`);\n}\n\n// Extract latitude and longitude from first result\nconst { lat, lon } = geoResults[0];\n\n// Call Weather API using latitude and longitude\nconst weatherResult = await fetchWithRetry({\n  method: 'GET', // HTTP GET request\n  url: 'https://api.openweathermap.org/data/2.5/weather', // Weather endpoint\n  qs: {\n    lat,          // Latitude\n    lon,          // Longitude\n    appid: apiKey,// API key\n    units: 'metric' // Temperature in Celsius\n  },\n  json: true // Parse response as JSON\n});\n\n// Get the first weather condition from weather array\nconst [firstWeather] = weatherResult.weather;\n\n// Get city name from response\nconst { name } = weatherResult;\n\n// Get temperature from response\nconst { temp } = weatherResult.main;\n\n// Return final result to next node\nreturn {\n  json: {\n\n    // City name\n    city: name,\n\n    // Temperature in Celsius\n    temperatureC: temp,\n\n    // Weather description (e.g., clear sky)\n    condition: firstWeather.description\n  }\n};\n\n/* Flow Summary\nRead city name from input.\nCall Geocoding API to get latitude and longitude.\nIf city is not found, throw an error.\nCall Weather API using latitude and longitude.\nExtract city name, temperature, and weather condition.\nReturn clean JSON output.\nIf an API request fails, retry up to 3 times with increasing delays (1s → 2s → 4s). */"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        -16
+      ],
+      "id": "919f3908-1358-480a-90cc-20d581b6e8f0",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Th2odF1jftbLMMkzUp1I3vpkFTI2LUGR-2FvaNlo01g",
+          "mode": "list",
+          "cachedResultName": "Automation Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Th2odF1jftbLMMkzUp1I3vpkFTI2LUGR-2FvaNlo01g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Th2odF1jftbLMMkzUp1I3vpkFTI2LUGR-2FvaNlo01g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now }}",
+            "city": "={{ $json.city }}",
+            "temperatureC": "={{ $json.temperatureC }}",
+            "condition": "={{ $json.condition }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "temperatureC",
+              "displayName": "temperatureC",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "condition",
+              "displayName": "condition",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        0
+      ],
+      "id": "02820e31-e54d-4bef-a4ea-10071626c6c3",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cBJ8NqUPOAAXrawt",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        16
+      ],
+      "id": "8eb4a130-649d-42cb-94fa-e3d6f65a45f5",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Generate City List:Code Node": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate City List:Code Node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "RtIucq0NT6BpNkfh",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "b005efdc-f4f9-4a41-87df-437d5ed3b9c8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f46772cf6e4809818bc95e2cc7cf4946f959fd18d239fe6092d62fcb39916f98"
+  },
+  "nodeGroups": [],
+  "id": "hkGVkwR4CEnZIf6l",
+  "tags": []
+}

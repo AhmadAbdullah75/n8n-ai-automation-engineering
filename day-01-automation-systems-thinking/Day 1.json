@@ -1,0 +1,263 @@
+{
+  "name": "Day 1",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -32
+      ],
+      "id": "f150eb22-755a-4b86-9ac1-17298cee66d5",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5d9a6112-6a9d-4bf7-840f-e8b9fee6d20f",
+              "name": "name",
+              "value": "Ali Khan",
+              "type": "string"
+            },
+            {
+              "id": "47b3a0e2-19e1-4b63-b47b-f9813687c5d4",
+              "name": "email",
+              "value": "ali@gmail.com",
+              "type": "string"
+            },
+            {
+              "id": "43b1b2ea-2fc5-48a0-bd8c-95b97f4f8ba0",
+              "name": "source",
+              "value": "contact form",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        144,
+        -32
+      ],
+      "id": "4c7568ca-8f44-4e9e-bca5-23647050748b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "525f3785-c1dc-4194-9f0c-ce2d22dc3155",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        352,
+        -16
+      ],
+      "id": "23ddc9b0-d602-4636-88d4-72436b6b6a45",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "749b81d7-2c36-4223-8b41-f6cd6e223c3b",
+              "name": "Message",
+              "value": "=New Lead from {{ $json.source }}: {{ $json.name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        -112
+      ],
+      "id": "b6c4e5c8-a8f1-4ff6-bd71-b63d3437fa1a",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b46ec2c5-cfe1-4827-bb9f-28b3486ab630",
+              "leftValue": "={{ $('If').item.json.source }}",
+              "rightValue": "contact form",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        768,
+        -112
+      ],
+      "id": "8afef1c4-0782-4167-9d4e-884addd0671c",
+      "name": "If1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        560,
+        80
+      ],
+      "id": "d263e65b-065d-46db-8f6a-aeb79c9763f0",
+      "name": "Log: Rejected — invalid data"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -176
+      ],
+      "id": "5796ba3a-1aa2-424c-a1b0-be4174dd8d09",
+      "name": "Action: Send Slack Message"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        -176
+      ],
+      "id": "bb9e8657-c625-4046-a5db-33ab99f2b018",
+      "name": "Log: Record outcome"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log: Rejected — invalid data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Action: Send Slack Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action: Send Slack Message": {
+      "main": [
+        [
+          {
+            "node": "Log: Record outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6484fb62-3087-4035-97c9-381bcf2824eb",
+  "meta": {
+    "instanceId": "7166564a940f421a3e3155dc4cc8de04943289cfb21df3dc9e1776fcc617e45b"
+  },
+  "nodeGroups": [],
+  "id": "6febqafU8jm5beFu",
+  "tags": []
+}

@@ -1,0 +1,236 @@
+{
+  "name": "Day 4",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        0
+      ],
+      "id": "b561afb5-ff08-4339-bb07-eaa174e3d8ab",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://jsonplaceholder.typicode.com/users",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "5905ad6e-212d-4659-aea9-7eb0fa72cded",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "93b79878-5666-4f06-b1ff-1189605f7939",
+              "name": "city",
+              "value": "={{ $json.address.city }}",
+              "type": "string"
+            },
+            {
+              "id": "ea1e64a0-f33e-4661-b443-e53fe3b56487",
+              "name": "lat",
+              "value": "={{ $json.address.geo.lat }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        -64
+      ],
+      "id": "e7f116db-04ac-4620-9fd4-ff3ee046713a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9702f9e0-b49c-4dd3-93c0-ccb88a35fae5",
+              "leftValue": "={{ $('HTTP Request').item.json.company.name }}",
+              "rightValue": "=Group",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        400,
+        -64
+      ],
+      "id": "914f89d4-bda3-48c2-aaa7-172ae76aa7ee",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { name: \"Ali Khan\", email: \"ali@example.com\" } },\n  { json: { name: \"Sara Ahmed\", email: \"sara@example.com\" } },\n  { json: { name: \"Bilal Raza\", email: \"bilal@example.com\" } }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        224
+      ],
+      "id": "42e70402-7099-436b-b28f-53ec5fe8ec74",
+      "name": "Leads - Form (List A)"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { name: \"Sara Ahmed\", email: \"sara@example.com\" } },\n  { json: { name: \"Zara Malik\", email: \"zara@example.com\" } }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        400
+      ],
+      "id": "f6446284-cd80-4532-b066-712be796f610",
+      "name": "Leads - Form (List B)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        288,
+        256
+      ],
+      "id": "6a7b3b0b-cc52-4d1a-9280-609f8179310d",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "email",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        496,
+        256
+      ],
+      "id": "63284455-06b7-4ddf-925f-8817d6e1d94f",
+      "name": "Remove Duplicates"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Leads - Form (List A)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Leads - Form (List B)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leads - Form (List A)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leads - Form (List B)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "87d4c47d-b757-46fd-a28c-bd343ba2c978",
+  "meta": {
+    "instanceId": "7166564a940f421a3e3155dc4cc8de04943289cfb21df3dc9e1776fcc617e45b"
+  },
+  "nodeGroups": [],
+  "id": "hRvjJxYZ6rR1yNj0",
+  "tags": []
+}
