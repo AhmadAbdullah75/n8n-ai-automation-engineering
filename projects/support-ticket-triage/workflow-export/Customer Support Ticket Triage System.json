@@ -1,0 +1,1237 @@
+{
+  "name": "Customer Support Ticket Triage System",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Contact Support",
+        "formDescription": "Tell us what's going on and our team will get back to you.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email Address",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company Name"
+            },
+            {
+              "fieldLabel": "Subject",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Description of the Issue",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "form-trigger-1",
+      "name": "New Support Request Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "19c00038-045f-49fa-8a53-cb8ce1da8861"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nconst errors = [];\nconst fullName = (item['Full Name'] || '').toString().trim();\nconst email = (item['Email Address'] || '').toString().trim();\nconst company = (item['Company Name'] || '').toString().trim();\nconst subject = (item['Subject'] || '').toString().trim();\nconst description = (item['Description of the Issue'] || '').toString().trim();\n\nif (!fullName) errors.push('Full Name is required');\nif (!email) errors.push('Email Address is required');\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nif (email && !emailRegex.test(email)) errors.push('Email Address format is invalid');\nif (!subject) errors.push('Subject is required');\nif (!description) errors.push('Description of the Issue is required');\n\nreturn {\n  json: {\n    fullName,\n    email,\n    company,\n    subject,\n    description,\n    isValid: errors.length === 0,\n    validationErrors: errors\n  }\n};"
+      },
+      "id": "code-validate-1",
+      "name": "Validate Submission",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9b92b336-3e80-4a8d-b8e7-0b348dcb1d0b",
+              "leftValue": "={{ $json.isValid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-valid-1",
+      "name": "Is Submission Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "noop-invalid-1",
+      "name": "Reject - Invalid Submission",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        416,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "id": "groq-model-1",
+      "name": "Groq Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        784,
+        224
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "YofsNWHonJeVZT2c",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following customer support request.\n\nCustomer Information\n\nName:\n{{ $json.fullName }}\n\nEmail:\n{{ $json.email }}\n\nCompany:\n{{ $json.company || 'N/A' }}\n\nSubject:\n{{ $json.subject }}\n\nIssue Description:\n{{ $json.description }}\n\nAnalyze the request according to the system instructions and return ONLY the required JSON object.",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are an AI Customer Support Ticket Analysis Engine for a SaaS company. Your responsibility is to analyze customer support requests and return structured JSON that will be consumed by an automated n8n workflow. Your output MUST be machine-readable.\n\nIMPORTANT RULES\n- Return ONLY one valid JSON object.\n- Do NOT use Markdown.\n- Do NOT wrap the JSON inside ```json.\n- Do NOT explain your reasoning.\n- Do NOT include introductory text.\n- Do NOT include notes.\n- Do NOT include comments.\n- Do NOT include any text before or after the JSON.\n- Never omit any field.\n- If you cannot determine a value, use null.\n- Confidence must be an integer between 0 and 100.\n\nAnalyze every ticket and determine:\n\n1. category\nAllowed values ONLY: Billing, Technical Support, Sales, Refund, Account Access, Feature Request, Bug Report, Other\n\n2. department\nAllowed values ONLY: Billing, Technical Support, Sales, Customer Success, Engineering, Manual Review\n\n3. priority\nAllowed values ONLY: Low, Medium, High, Urgent\nPriority Guidelines:\nUrgent - Business cannot operate, security issue, data loss, critical outage\nHigh - Customer blocked from major functionality, login problems, duplicate payment, refund request\nMedium - General support, sales enquiry, performance issues\nLow - Suggestions, feedback, feature requests\n\n4. sentiment\nAllowed values ONLY: Positive, Neutral, Negative\n\n5. confidence\nReturn an integer from 0-100 representing how confident you are in the classification.\nIf the description is too vague or generic to confidently identify the specific root cause (e.g. \"it's not working\", \"please fix it\", \"something is broken\"), cap your confidence at 65 regardless of how certain the category otherwise seems.\nIf confidence is below 80 because the request is ambiguous, return \"department\": \"Manual Review\".\n\n6. ticketTitle\nGenerate a concise title. Maximum 10 words.\n\n7. summary\nSummarize the issue in one or two professional sentences.\n\n8. suggestedResponse\nGenerate a professional acknowledgement email. Do NOT promise refunds. Do NOT promise fixes. Simply acknowledge receipt of the request, mention that the appropriate team has received it, and state that they will respond as soon as possible.\n\nReturn EXACTLY this JSON structure:\n{\n  \"category\": \"\",\n  \"department\": \"\",\n  \"priority\": \"\",\n  \"sentiment\": \"\",\n  \"confidence\": 0,\n  \"ticketTitle\": \"\",\n  \"summary\": \"\",\n  \"suggestedResponse\": \"\"\n}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "chain-llm-1",
+      "name": "AI Ticket Analysis",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        784,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const original = $('Validate Submission').item.json;\nlet raw = ($input.item.json.text || '').trim();\nraw = raw.replace(/^```json\\s*/i, '').replace(/^```\\s*/, '').replace(/```\\s*$/, '');\n\nlet parsed;\nlet parseSuccess = true;\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n  parseSuccess = false;\n  parsed = {};\n}\n\nconst validCategories = ['Billing','Technical Support','Sales','Refund','Account Access','Feature Request','Bug Report','Other'];\nconst validPriorities = ['Low','Medium','High','Urgent'];\nconst validSentiments = ['Positive','Neutral','Negative'];\n\nif (parseSuccess) {\n  if (!validCategories.includes(parsed.category)) parsed.category = 'Other';\n  if (!validPriorities.includes(parsed.priority)) parsed.priority = 'Medium';\n  if (!validSentiments.includes(parsed.sentiment)) parsed.sentiment = 'Neutral';\n  if (typeof parsed.confidence !== 'number') parsed.confidence = Number(parsed.confidence) || 0;\n}\n\nreturn {\n  json: {\n    ...original,\n    parseSuccess,\n    rawAiResponse: raw,\n    category: parsed.category || null,\n    department: parsed.department || null,\n    priority: parsed.priority || null,\n    sentiment: parsed.sentiment || null,\n    confidence: parsed.confidence ?? 0,\n    ticketTitle: parsed.ticketTitle || original.subject,\n    summary: parsed.summary || '',\n    suggestedResponse: parsed.suggestedResponse || ''\n  }\n};"
+      },
+      "id": "code-parse-1",
+      "name": "Parse AI JSON Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.parseSuccess }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "if-parseok-1",
+      "name": "AI Parsed Successfully?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "noop-aierror-1",
+      "name": "Log AI Failure",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c3",
+              "leftValue": "={{ $json.confidence }}",
+              "rightValue": 80,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "if-confidence-1",
+      "name": "Confidence >= 80?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "department",
+              "value": "Manual Review",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "set-manualreview-1",
+      "name": "Flag for Manual Review",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1824,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const now = new Date();\nconst datePart = now.toISOString().slice(0,10).replace(/-/g, '');\nconst randomPart = Math.floor(1000 + Math.random() * 9000);\nconst ticketId = `SUP-${datePart}-${randomPart}`; // e.g. SUP-20260712-4831\n\nreturn {\n  json: {\n    ...$input.item.json,\n    ticketId,\n    timestamp: now.toISOString(),\n    submissionDate: now.toISOString().split('T')[0],\n    status: 'Open'\n  }\n};"
+      },
+      "id": "code-ticketid-1",
+      "name": "Generate Ticket ID & Metadata",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Yn8CPaKV2KRj8dtyglLN838hamCoydhytJWE-OS1zu4",
+          "mode": "list",
+          "cachedResultName": "Support Tickets",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Yn8CPaKV2KRj8dtyglLN838hamCoydhytJWE-OS1zu4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1903041762,
+          "mode": "list",
+          "cachedResultName": "Tickets",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Yn8CPaKV2KRj8dtyglLN838hamCoydhytJWE-OS1zu4/edit#gid=1903041762"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Ticket ID": "={{ $json.ticketId }}",
+            "Timestamp": "={{ $json.timestamp }}",
+            "Customer Name": "={{ $json.fullName }}",
+            "Email": "={{ $json.email }}",
+            "Company": "={{ $json.company }}",
+            "Subject": "={{ $json.subject }}",
+            "Description": "={{ $json.description }}",
+            "Category": "={{ $json.category }}",
+            "Department": "={{ $json.department }}",
+            "Priority": "={{ $json.priority }}",
+            "Sentiment": "={{ $json.sentiment }}",
+            "Confidence": "={{ $json.confidence }}",
+            "Ticket Title": "={{ $json.ticketTitle }}",
+            "Summary": "={{ $json.summary }}",
+            "Status": "={{ $json.status }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Ticket ID",
+              "displayName": "Ticket ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Department",
+              "displayName": "Department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ticket Title",
+              "displayName": "Ticket Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "gsheets-store-1",
+      "name": "Store Ticket in Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2352,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cBJ8NqUPOAAXrawt",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $('Generate Ticket ID & Metadata').item.json;\nlet routeKey;\nif (item.confidence < 80) {\n  routeKey = 'ManualReview';\n} else {\n  const cat = (item.category || '').toLowerCase();\n  if (cat === 'billing') routeKey = 'Billing';\n  else if (cat === 'technical support' || cat === 'bug report') routeKey = 'Technical';\n  else if (cat === 'sales') routeKey = 'Sales';\n  else if (cat === 'refund') routeKey = 'Refund';\n  else routeKey = 'General';\n}\nreturn { json: { ...item, routeKey } };"
+      },
+      "id": "code-routekey-1",
+      "name": "Determine Routing Key",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2608,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r1",
+                    "leftValue": "={{ $json.routeKey }}",
+                    "rightValue": "ManualReview",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r2",
+                    "leftValue": "={{ $json.routeKey }}",
+                    "rightValue": "Billing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r3",
+                    "leftValue": "={{ $json.routeKey }}",
+                    "rightValue": "Technical",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r4",
+                    "leftValue": "={{ $json.routeKey }}",
+                    "rightValue": "Sales",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r5",
+                    "leftValue": "={{ $json.routeKey }}",
+                    "rightValue": "Refund",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r6",
+                    "leftValue": "={{ $json.routeKey }}",
+                    "rightValue": "General",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "switch-route-1",
+      "name": "Route by Department",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2864,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "slackChannel",
+              "value": "manual-review",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-ch-manualreview",
+      "name": "Channel: Manual Review",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3120,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s2",
+              "name": "slackChannel",
+              "value": "billing-support",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-ch-billing",
+      "name": "Channel: Billing",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3120,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s3",
+              "name": "slackChannel",
+              "value": "technical-support",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-ch-technical",
+      "name": "Channel: Technical",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3120,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s4",
+              "name": "slackChannel",
+              "value": "sales-support",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-ch-sales",
+      "name": "Channel: Sales",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3120,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s5",
+              "name": "slackChannel",
+              "value": "refund-support",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-ch-refund",
+      "name": "Channel: Refund",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3120,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s6",
+              "name": "slackChannel",
+              "value": "general-support",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-ch-general",
+      "name": "Channel: General",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3120,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "select": "=channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $json.slackChannel }}",
+          "mode": "name"
+        },
+        "user": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "text": "=:ticket: New ticket *{{ $('Generate Ticket ID & Metadata').item.json.ticketId }}* ({{ $('Generate Ticket ID & Metadata').item.json.priority }} priority)\n*Subject:* {{ $('Generate Ticket ID & Metadata').item.json.subject }}\n*Customer:* {{ $('Generate Ticket ID & Metadata').item.json.fullName }} ({{ $('Generate Ticket ID & Metadata').item.json.email }})\n*Category:* {{ $('Generate Ticket ID & Metadata').item.json.category }} | *Sentiment:* {{ $('Generate Ticket ID & Metadata').item.json.sentiment }} | *Confidence:* {{ $('Generate Ticket ID & Metadata').item.json.confidence }}%\n*Summary:* {{ $('Generate Ticket ID & Metadata').item.json.summary }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "slack-notify-1",
+      "name": "Post Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        3408,
+        -64
+      ],
+      "webhookId": "18a69769-8dcf-4fa4-8aae-84fb29ca5113",
+      "credentials": {
+        "slackApi": {
+          "id": "cqSa0SLvNLtzYNO7",
+          "name": "Slack account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Generate Ticket ID & Metadata').item.json.email }}",
+        "subject": "=We've received your request - Ticket {{ $('Generate Ticket ID & Metadata').item.json.ticketId }} ",
+        "message": "=<p>Hi {{ $('Generate Ticket ID & Metadata').item.json.fullName }},</p><p>Thanks for reaching out. We've logged your request as ticket <strong>{{ $('Generate Ticket ID & Metadata').item.json.ticketId }}</strong>.</p><p><strong>Summary:</strong> {{ $('Generate Ticket ID & Metadata').item.json.summary }}</p><p><strong>Assigned to:</strong> {{ $('Generate Ticket ID & Metadata').item.json.department }}<br/><strong>Priority:</strong> {{ $('Generate Ticket ID & Metadata').item.json.priority }}</p><p>Estimated response time: {{ $('Generate Ticket ID & Metadata').item.json.priority === 'Urgent' ? 'within 2 hours' : $('Generate Ticket ID & Metadata').item.json.priority === 'High' ? 'within 8 hours' : $('Generate Ticket ID & Metadata').item.json.priority === 'Medium' ? 'within 1 business day' : 'within 2-3 business days' }}.</p><p>{{ $('Generate Ticket ID & Metadata').item.json.suggestedResponse }}</p><p>Thanks,<br/>Support Team</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "gmail-confirm-1",
+      "name": "Send Confirmation Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2608,
+        224
+      ],
+      "webhookId": "c3c4d9a8-529a-4db8-b921-f4033281dd2c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "JqO7tvtwJ7Y3ifa5",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "id": "noop-logerror-1",
+      "name": "Log Integration Failure",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3520,
+        704
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "noop-complete-1",
+      "name": "Ticket Processing Complete",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3744,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Support Ticket Triage\nForm -> Validate -> AI Analysis -> Confidence Check -> Ticket ID -> Google Sheets -> Slack + Email",
+        "height": 140,
+        "width": 900,
+        "color": 6
+      },
+      "id": "sticky-1",
+      "name": "Flow Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -336
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Manual setup required\n1. Google Sheets documentId is a placeholder - update once the setup workflow has run.\n2. Slack node has NO credential yet - connect a Slack app/bot token.\n3. Gmail node has NO credential yet - connect Gmail OAuth or switch to SMTP.\nSee chat for full instructions.",
+        "width": 500,
+        "color": 3
+      },
+      "id": "sticky-2",
+      "name": "Setup Needed",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3120,
+        -560
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Support Request Form": {
+      "main": [
+        [
+          {
+            "node": "Validate Submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Submission": {
+      "main": [
+        [
+          {
+            "node": "Is Submission Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Submission Valid?": {
+      "main": [
+        [
+          {
+            "node": "AI Ticket Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject - Invalid Submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Ticket Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Ticket Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse AI JSON Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI JSON Response": {
+      "main": [
+        [
+          {
+            "node": "AI Parsed Successfully?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Parsed Successfully?": {
+      "main": [
+        [
+          {
+            "node": "Confidence >= 80?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log AI Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confidence >= 80?": {
+      "main": [
+        [
+          {
+            "node": "Generate Ticket ID & Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Flag for Manual Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flag for Manual Review": {
+      "main": [
+        [
+          {
+            "node": "Generate Ticket ID & Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Ticket ID & Metadata": {
+      "main": [
+        [
+          {
+            "node": "Store Ticket in Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Ticket in Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Determine Routing Key",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Integration Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Routing Key": {
+      "main": [
+        [
+          {
+            "node": "Route by Department",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Department": {
+      "main": [
+        [
+          {
+            "node": "Channel: Manual Review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Channel: Billing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Channel: Technical",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Channel: Sales",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Channel: Refund",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Channel: General",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Channel: Manual Review": {
+      "main": [
+        [
+          {
+            "node": "Post Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Channel: Billing": {
+      "main": [
+        [
+          {
+            "node": "Post Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Channel: Technical": {
+      "main": [
+        [
+          {
+            "node": "Post Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Channel: Sales": {
+      "main": [
+        [
+          {
+            "node": "Post Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Channel: Refund": {
+      "main": [
+        [
+          {
+            "node": "Post Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Channel: General": {
+      "main": [
+        [
+          {
+            "node": "Post Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Slack Notification": {
+      "main": [
+        [
+          {
+            "node": "Ticket Processing Complete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Integration Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Confirmation Email": {
+      "main": [
+        [
+          {
+            "node": "Ticket Processing Complete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Integration Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "executionTimeout": 3600,
+    "timezone": "UTC"
+  },
+  "versionId": "fe0c9bee-f524-4040-8113-27b7025ebe10",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f46772cf6e4809818bc95e2cc7cf4946f959fd18d239fe6092d62fcb39916f98"
+  },
+  "nodeGroups": [],
+  "id": "NbVqwYEQRWooIK6V",
+  "tags": []
+}
