@@ -1,0 +1,155 @@
+{
+  "name": "Setup - Create Support Tickets Sheet",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger-1",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "Support Tickets",
+        "sheetsUi": {
+          "sheetValues": [
+            {
+              "title": "Tickets"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-sheet-1",
+      "name": "Create Support Tickets Spreadsheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        272,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cBJ8NqUPOAAXrawt",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Tickets",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Ticket ID": "Ticket ID",
+            "Timestamp": "Timestamp",
+            "Customer Name": "Customer Name",
+            "Email": "Email",
+            "Company": "Company",
+            "Subject": "Subject",
+            "Description": "Description",
+            "Category": "Category",
+            "Department": "Department",
+            "Priority": "Priority",
+            "Sentiment": "Sentiment",
+            "Confidence": "Confidence",
+            "Ticket Title": "Ticket Title",
+            "Summary": "Summary",
+            "Status": "Status"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "add-header-1",
+      "name": "Add Header Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        528,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cBJ8NqUPOAAXrawt",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## One-time setup\nClick 'Execute workflow' (top right) ONCE.\nThis creates a new 'Support Tickets' spreadsheet with a header row, then can be deleted/deactivated.\nAfter running, copy the Spreadsheet ID from the output and send it back so the main workflow can be wired up to it.",
+        "height": 180,
+        "width": 500,
+        "color": 4
+      },
+      "id": "sticky-1",
+      "name": "Instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        16,
+        -256
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Create Support Tickets Spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Support Tickets Spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "Add Header Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "executionTimeout": 3600,
+    "timezone": "UTC"
+  },
+  "versionId": "98bba7f7-c99f-407f-ada4-eb6bd38a92af",
+  "meta": {
+    "instanceId": "f46772cf6e4809818bc95e2cc7cf4946f959fd18d239fe6092d62fcb39916f98"
+  },
+  "nodeGroups": [],
+  "id": "5pR21UlcEjDYs85S",
+  "tags": []
+}
